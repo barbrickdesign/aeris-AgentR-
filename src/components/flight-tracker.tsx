@@ -27,6 +27,7 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useFlights } from "@/hooks/use-flights";
 import { useTrailHistory } from "@/hooks/use-trail-history";
 import { useFlightTrack } from "@/hooks/use-flight-track";
+import { useAirportStatus } from "@/hooks/use-airport-status";
 import { MAP_STYLES, DEFAULT_STYLE, type MapStyle } from "@/lib/map-styles";
 import { CITIES, type City } from "@/lib/cities";
 import { AIRPORTS, findByIata, airportToCity } from "@/lib/airports";
@@ -268,6 +269,8 @@ function FlightTrackerInner() {
     fpvIcao24,
     fpvSeedCenter,
   );
+
+  const { status: airportStatus } = useAirportStatus(activeCity.iata);
 
   const displayFlights = flights;
   const displayTrails = useTrailHistory(displayFlights);
@@ -1005,9 +1008,12 @@ function FlightTrackerInner() {
             <StatusBar
               flightCount={flights.length}
               cityName={activeCity.name}
+              iata={activeCity.iata}
               loading={loading}
               rateLimited={rateLimited}
               retryIn={retryIn}
+              airportStatus={airportStatus}
+              isDark={mapStyle.dark}
               onNorthUp={handleNorthUp}
               onResetView={handleResetView}
               onRandomAirport={handleRandomAirport}
