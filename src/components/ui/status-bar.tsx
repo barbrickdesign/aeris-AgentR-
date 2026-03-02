@@ -2,13 +2,18 @@
 
 import { motion, AnimatePresence } from "motion/react";
 import { Dices, Plane, Radio, ShieldAlert } from "lucide-react";
+import { WorldMonitorLink } from "@/components/ui/world-monitor-link";
+import type { AirportStatusPayload } from "@/app/api/airport-status/route";
 
 type StatusBarProps = {
   flightCount: number;
   cityName: string;
+  iata: string;
   loading: boolean;
   rateLimited?: boolean;
   retryIn?: number;
+  airportStatus?: AirportStatusPayload | null;
+  isDark?: boolean;
   onNorthUp?: () => void;
   onResetView?: () => void;
   onRandomAirport?: () => void;
@@ -17,9 +22,12 @@ type StatusBarProps = {
 export function StatusBar({
   flightCount,
   cityName,
+  iata,
   loading,
   rateLimited = false,
   retryIn = 0,
+  airportStatus = null,
+  isDark = true,
   onNorthUp,
   onResetView,
   onRandomAirport,
@@ -176,6 +184,13 @@ export function StatusBar({
           </button>
         </motion.div>
       </div>
+
+      <WorldMonitorLink
+        cityName={cityName}
+        iata={iata}
+        status={airportStatus}
+        isDark={isDark}
+      />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 # Aeris
 
-Real-time 3D flight tracking — altitude-aware, visually stunning.
+Real-time 3D flight tracking — altitude-aware, visually stunning. Powered by [World Monitor](https://worldmonitor.app) aviation intelligence.
 
-Aeris renders live air traffic over the world's busiest airspaces on a premium dark-mode map. Flights are separated by altitude in true 3D: low altitudes glow cyan, high altitudes shift to gold. Select a city, and the camera glides to that airspace with spring-eased animation.
+Aeris renders live air traffic over the world's busiest airspaces on a premium dark-mode map. Flights are separated by altitude in true 3D: low altitudes glow cyan, high altitudes shift to gold. Select a city, and the camera glides to that airspace with spring-eased animation. Airport delay intelligence is surfaced inline via the [World Monitor](https://github.com/barbrickdesign/worldMonitor-enhancedByAgentR) aviation service — ground stops, departure delays, and severity ratings refresh automatically every 5 minutes.
 
 [Live Demo](https://aeris.edbn.me)
 
@@ -16,16 +16,58 @@ Aeris renders live air traffic over the world's busiest airspaces on a premium d
 
 ## Stack
 
-| Layer     | Technology                                      |
-| --------- | ----------------------------------------------- |
-| Framework | Next.js 16 (App Router, Turbopack)              |
-| Language  | TypeScript                                      |
-| Styling   | Tailwind CSS v4                                 |
-| Map       | MapLibre GL JS                                  |
-| WebGL     | Deck.gl 9 (IconLayer, PathLayer, MapboxOverlay) |
-| Animation | Motion (Framer Motion)                          |
-| Data      | OpenSky Network API                             |
-| Hosting   | Vercel                                          |
+| Layer          | Technology                                                                                                         |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Framework      | Next.js 16 (App Router, Turbopack)                                                                                 |
+| Language       | TypeScript                                                                                                         |
+| Styling        | Tailwind CSS v4                                                                                                     |
+| Map            | MapLibre GL JS                                                                                                      |
+| WebGL          | Deck.gl 9 (IconLayer, PathLayer, MapboxOverlay)                                                                    |
+| Animation      | Motion (Framer Motion)                                                                                              |
+| Flight data    | OpenSky Network API                                                                                                 |
+| Delay intel    | [World Monitor aviation API](https://github.com/barbrickdesign/worldMonitor-enhancedByAgentR) (FAA + Eurocontrol) |
+| Hosting        | Vercel                                                                                                              |
+
+## World Monitor Integration
+
+Aeris is deeply integrated with [World Monitor](https://github.com/barbrickdesign/worldMonitor-enhancedByAgentR) — a real-time global intelligence dashboard that aggregates geopolitical events, military activity, vessel tracking, and aviation intelligence from dozens of live sources.
+
+### Features
+
+| Feature | Description |
+| ------- | ----------- |
+| **Airport delay badge** | Live ground stops, departure/arrival delays, and closures sourced from World Monitor's aviation service (FAA + Eurocontrol) |
+| **Delay severity** | Color-coded severity levels: minor → moderate → major → severe |
+| **World Monitor link** | One-click navigation to worldmonitor.app with city context for broader geopolitical intelligence |
+| **Auto-refresh** | Delay data refreshes every 5 minutes via `/api/airport-status` (server-side cached) |
+
+### How it works
+
+```
+Client                   Aeris (Next.js)               World Monitor
+  │                            │                              │
+  │ GET /api/airport-status    │                              │
+  │ ?iata=SFO ──────────────►  │                              │
+  │                            │  GET /api/aviation/v1/       │
+  │                            │  list-airport-delays ──────► │
+  │                            │                              │
+  │                            │ ◄── { alerts: [...] } ───── │
+  │                            │                              │
+  │ ◄── { severity, type,  ── │                              │
+  │        avgDelayMinutes }   │                              │
+```
+
+### New files
+
+```
+src/
+├── app/api/airport-status/
+│   └── route.ts           World Monitor aviation API proxy (5-min cache)
+├── hooks/
+│   └── use-airport-status.ts  Polling hook — refreshes delay data every 5 min
+└── components/ui/
+    └── world-monitor-link.tsx  Delay badge + worldmonitor.app deep-link
+```
 
 ## Getting Started
 
@@ -46,7 +88,8 @@ src/
 │   ├── globals.css            Tailwind config, theme vars
 │   ├── layout.tsx             Root layout (Inter font)
 │   ├── page.tsx               Entry — renders <FlightTracker />
-│   └── api/flights/route.ts   OpenSky proxy with rate limiting + auth
+│   └── api/
+│       └── airport-status/    World Monitor aviation proxy (delay intel)
 ├── components/
 │   ├── flight-tracker.tsx     Orchestrator — state, camera, layers, UI
 │   ├── map/
@@ -58,8 +101,10 @@ src/
 │       ├── flight-card.tsx    Hover card with flight details
 │       ├── scroll-area.tsx    Custom scrollbar
 │       ├── slider.tsx         Orbit speed slider (Radix)
-│       └── status-bar.tsx     Live status indicator
+│       ├── status-bar.tsx     Live status + World Monitor delay badge
+│       └── world-monitor-link.tsx  World Monitor intelligence link
 ├── hooks/
+│   ├── use-airport-status.ts  World Monitor delay polling hook
 │   ├── use-flights.ts         Adaptive polling hook with credit-aware throttling
 │   ├── use-settings.tsx       Settings context with localStorage persistence
 │   └── use-trail-history.ts   Trail accumulation + Catmull-Rom smoothing
@@ -93,6 +138,8 @@ src/
 | `NEXT_PUBLIC_GA_ID`     | No       | Google Analytics measurement ID |
 
 Without credentials, anonymous access is used (~10 requests/minute).
+
+The World Monitor aviation integration requires no API key — delay data is fetched server-side via the public `https://api.worldmonitor.app` endpoint.
 
 ## License
 
